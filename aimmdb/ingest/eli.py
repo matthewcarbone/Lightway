@@ -18,19 +18,23 @@ def read_metadata_and_header(path: Path):
     return metadata, header
 
 
-def ingest(path: Path):
+def ingest(path: Path, return_uid=False):
     md, hdr = read_metadata_and_header(path)
     # print(header)
     temp_data = pd.read_csv(path, sep="\s+", comment="#", names=hdr.split())
-    print(path)
+    # print(path)
     temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
     temp_data["mu_fluor"] = -(temp_data["iff"] / temp_data["i0"])
     temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
 
     data = temp_data[["energy", "mu_trans", "mu_fluor", "mu_ref"]]
-    print(data)
-    print(md["Scan.uid"])
-    return data, md
+    # print(data)
+
+    if return_uid:
+        uid = md["Scan.uid"]
+        return data, md, uid
+    else:
+        return data, md
 
 
 if __name__ == "__main__":
