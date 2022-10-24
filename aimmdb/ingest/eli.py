@@ -3,8 +3,8 @@ import pandas as pd
 from pathlib import Path
 
 
-def get_metadata_and_header(path: Path):
-    md = {}
+def read_metadata_and_header(path: Path):
+    metadata = {}
     header = ""
     dat_file = path.open()
     for line in dat_file:
@@ -12,18 +12,25 @@ def get_metadata_and_header(path: Path):
             line = line[2:]  # remove hash and whitespace
             if ":" in line:
                 key, value = line.split(":", maxsplit=1)
-                md[key] = value.strip()
+                metadata[key] = value.strip()
             else:
                 header = line
-    return md, header
+    return metadata, header
 
 
 def ingest(path: Path):
-    md, header = get_metadata_and_header(path)
+    md, hdr = read_metadata_and_header(path)
     # print(header)
-    data = pd.read_csv(path, sep="\s+", comment="#", names=header.split())
+    temp_data = pd.read_csv(path, sep="\s+", comment="#", names=hdr.split())
     print(path)
-    print(md.values())
+    temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
+    temp_data["mu_fluor"] = -(temp_data["iff"] / temp_data["i0"])
+    temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
+
+    data = temp_data[["energy", "mu_trans", "mu_fluor", "mu_ref"]]
+    print(data)
+    print(md["Scan.uid"])
+    return data, md
 
 
 if __name__ == "__main__":
