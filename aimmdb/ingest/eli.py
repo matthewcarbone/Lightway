@@ -22,13 +22,11 @@ def ingest(path: Path, return_uid=False):
     md, hdr = read_metadata_and_header(path)
     # print(header)
     temp_data = pd.read_csv(path, sep="\s+", comment="#", names=hdr.split())
-    # print(path)
     temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
     temp_data["mu_fluor"] = -(temp_data["iff"] / temp_data["i0"])
     temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
 
     data = temp_data[["energy", "mu_trans", "mu_fluor", "mu_ref"]]
-    # print(data)
 
     if return_uid:
         uid = md["Scan.uid"]
@@ -42,6 +40,10 @@ if __name__ == "__main__":
     def test():
         test_path = Path("/home/charles/Desktop/test_data/aimmdb_ingestion/some_scans")
         for p in test_path.iterdir():
-            ingest(p)
+            if ".dat" in p.name:
+                data, md = ingest(p)
+                print(p)
+                print(data)
+                print(md)
 
     test()
