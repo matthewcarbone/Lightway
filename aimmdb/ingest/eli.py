@@ -6,13 +6,26 @@ from pathlib import Path
 def read_metadata_and_header(path: Path):
     metadata = {}
     header = ""
-    dat_file = path.open()
-    for line in dat_file:
-        if line.startswith("#"):
-            line = line[2:]  # remove hash and whitespace
+    with open(path, "r") as dat_file:
+        lines = dat_file.readlines()
+        metadata = {
+            # remove starting hash and whitespace, then split at colon
+            line[2:].split(":", maxsplit=1)[0]: 
+            line[2:].split(":", maxsplit=1)[1].strip()
+            for line in lines
+            if ":" in line and line.startswith("#")
+        }
+
+        # # remove starting hash and whitespace
+        # lines = [line[2:] for line in lines if line.startswith("#")]
+        # md_kv = [line.split(":", maxsplit=1) for line in lines if ":" in line]
+        # metadata = {key: value.strip() for key, value in md_kv}
+
+        for line in lines:
             if ":" in line:
-                key, value = line.split(":", maxsplit=1)
-                metadata[key] = value.strip()
+                # key, value = line.split(":", maxsplit=1)
+                # metadata[key] = value.strip()
+                pass
             else:
                 header = line
     return metadata, header
@@ -20,8 +33,11 @@ def read_metadata_and_header(path: Path):
 
 def ingest(path: Path, return_uid=False):
     md, hdr = read_metadata_and_header(path)
-    # print(header)
+
+    hdr = "energy  i0  it  ir  iff  aux1  aux2  aux3  aux4"
+
     temp_data = pd.read_csv(path, sep="\s+", comment="#", names=hdr.split())
+    # temp_data = pd.read_csv(path, sep="\s+", comment="#", header=-1)
     temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
     temp_data["mu_fluor"] = -(temp_data["iff"] / temp_data["i0"])
     temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
