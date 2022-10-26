@@ -28,8 +28,6 @@ This is the intensity of the transmission signal, where :math:`I_0` is the backg
 
 We store a dataframe column called ``mu_fluor`` which is calculated via
 
-$\mu_\mathrm{fluor} = I_\mathrm{fluor}/I_0$
-
 .. code::
 
     mu_fluor = I_fluor / I_0
