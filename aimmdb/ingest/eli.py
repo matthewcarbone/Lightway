@@ -45,10 +45,9 @@ def ingest(path, return_uid=False):
     Data columns should correspond to energy, i0, it, ir, iff, and aux channels.
     DataFrame for aimmdb contains only energy and absorption coefficient (mu).
     There are several ways to calculate mu based on the mode of the measurement:
-    .. math::
-    - mu_{trans} = -ln(it/i0)
-    - mu_{fluor} = iff/i0
-    - mu_{ref} = -ln(ir/i0)
+    - mu_trans = -ln(it/i0)
+    - mu_fluor = iff/i0
+    - mu_ref = -ln(ir/i0)
 
     These are each calculated and used as columns in final DataFrame.
 
