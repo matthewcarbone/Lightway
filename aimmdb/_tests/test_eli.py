@@ -1,4 +1,4 @@
-from aimmdb.ingest.eli import ingest, read
+from aimmdb.ingest.eli import ingest
 
 
 def test_ingest():
