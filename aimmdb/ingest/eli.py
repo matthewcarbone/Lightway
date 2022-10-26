@@ -55,13 +55,13 @@ def ingest(path, return_uid=False):
     Other Parameters
     ----------------
     return_uid: bool
-        Optional keyword to separately return uid of scan. 
-        The uid should be present in the metadata, but it is an especially important 
+        Optional keyword to separately return uid of scan.
+        The uid should be present in the metadata, but it is an especially important
         piece of information that may be useful to store separately.
     """
     md, hdr = read_metadata_and_header(path)
 
-    temp_data = pd.read_csv(path, sep="\s+", comment="#", names=hdr.split())
+    temp_data = pd.read_csv(path, delim_whitespace=True, comment="#", names=hdr.split())
     temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
     temp_data["mu_fluor"] = -(temp_data["iff"] / temp_data["i0"])
     temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
@@ -73,17 +73,3 @@ def ingest(path, return_uid=False):
         return data, md, uid
     else:
         return data, md
-
-
-if __name__ == "__main__":
-
-    def test():
-        test_path = Path("/home/charles/Desktop/test_data/aimmdb_ingestion/some_scans")
-        for p in test_path.iterdir():
-            if ".dat" in p.name:
-                data, md = ingest(p)
-                print(p)
-                print(data)
-                print(md)
-
-    test()
