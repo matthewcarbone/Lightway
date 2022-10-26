@@ -21,25 +21,36 @@ def read_metadata_and_header(path):
     header: str
     with open(path, "r") as dat_file:
         lines = dat_file.readlines()
-        # remove starting hash and whitespace
-        comment_lines = [line[2:] for line in lines if line.startswith("#")]
+    # remove starting hash and whitespace
+    comment_lines = [line[2:] for line in lines if line.startswith("#")]
 
-        metadata = {
-            # split line at colon for key-value pairs and strip whitespace from values
-            line.split(":", maxsplit=1)[0]: line.split(":", maxsplit=1)[1].strip()
-            for line in comment_lines
-            if ":" in line
-        }
+    metadata = {
+        # split line at colon for key-value pairs and strip whitespace from values
+        line.split(":", maxsplit=1)[0]: line.split(":", maxsplit=1)[1].strip()
+        for line in comment_lines
+        if ":" in line
+    }
 
-        # only comment line without colon should be header
-        header = [line for line in comment_lines if ":" not in line]
-        header = header[0]
+    # only comment line without colon should be header
+    header = [line for line in comment_lines if ":" not in line]
+    header = header[0]
 
     return metadata, header
 
 
 def ingest(path, return_uid=False):
     """Prepare scan data from Eli (ISS beamline) for entry into AIMMDB
+
+    .dat file contains commented lines (denoted by #) with metadata, and columnated data.
+    Data columns should correspond to energy, i0, it, ir, iff, and aux channels.
+    DataFrame for aimmdb contains only energy and absorption coefficient (mu).
+    There are several ways to calculate mu based on the mode of the measurement:
+    .. math::
+    - mu_{trans} = -ln(it/i0)
+    - mu_{fluor} = iff/i0
+    - mu_{ref} = -ln(ir/i0)
+
+    These are each calculated and used as columns in final DataFrame.
 
     Parameters
     ----------
@@ -49,13 +60,13 @@ def ingest(path, return_uid=False):
     Returns
     -------
     tuple[DataFrame, dict[str, str]]
-        First element is DataFrame of column data from file.
+        First element is DataFrame of scan data (i.e., spectra).
         Second element is the metadata in a dictionary of str key-value pairs.
 
     Other Parameters
     ----------------
     return_uid: bool
-        Optional keyword to separately return uid of scan.
+        Optional keyword to return uid as third element in tuple.
         The uid should be present in the metadata, but it is an especially important
         piece of information that may be useful to store separately.
     """
