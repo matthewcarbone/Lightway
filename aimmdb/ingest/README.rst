@@ -21,9 +21,6 @@ We store a dataframe column called ``mu_trans`` which is calculated via
 
     mu_trans = -log(I_trans / I_0)
 
-
-$$
-
 This is the intensity of the transmission signal, where :math:`I_0` is the background intensity.
 
 ``mu`` fluorescence
