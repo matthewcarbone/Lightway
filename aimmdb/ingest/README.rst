@@ -17,7 +17,12 @@ This ingestion pipeline reads ``.dat`` files. These files contain commented line
 
 We store a dataframe column called ``mu_trans`` which is calculated via
 
-$\mu_\mathrm{trans} = -\log(I_\mathrm{trans}/I_0)$
+.. code::
+
+    mu_trans = -log(I_trans / I_0)
+
+
+$$
 
 This is the intensity of the transmission signal, where :math:`I_0` is the background intensity.
 
@@ -28,6 +33,10 @@ We store a dataframe column called ``mu_fluor`` which is calculated via
 
 $\mu_\mathrm{fluor} = I_\mathrm{fluor}/I_0$
 
+.. code::
+
+    mu_fluor = I_fluor / I_0
+
 This is the intensity of the fluorescence signal. Note there is no logarithmic scaling like above.
 
 ``mu`` fluorescence
@@ -35,5 +44,7 @@ This is the intensity of the fluorescence signal. Note there is no logarithmic s
 
 We store a dataframe column called ``mu_ref`` which is calculated via
 
-$\mu_\mathrm{ref} = -\log(I_\mathrm{ref}/I_0)$
+.. code::
+
+    mu_ref = -log(I_ref / I_0)
 
