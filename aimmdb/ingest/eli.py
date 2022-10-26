@@ -73,7 +73,7 @@ def ingest(path, return_uid=False):
 
     temp_data = pd.read_csv(path, delim_whitespace=True, comment="#", names=hdr.split())
     temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
-    temp_data["mu_fluor"] = -(temp_data["iff"] / temp_data["i0"])
+    temp_data["mu_fluor"] = temp_data["iff"] / temp_data["i0"]
     temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
 
     data = temp_data[["energy", "mu_trans", "mu_fluor", "mu_ref"]]
