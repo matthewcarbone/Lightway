@@ -7,15 +7,18 @@ This ingestion pipeline reads ``.dat`` files. These files contain commented line
 
 * For all comment lines, if they contain a colon, remove starting hash and split at colon to create key-value pairs
 * The only comment line without colon should be the header for columnated data
-* Place key-value pairs in metadata dictionary
+* Place key-value pairs in temporary metadata dictionary, ``temp_md``
 * Columnated data should contain energy, i0, it, ir, iff, and aux channels
-* Use data in .dat file to calculate mu_trans, mu_fluor, and mu_ref, i.e:
-* The final DataFrame contains ``energy``, ``mu_trans``, ``mu_fluor``, and ``mu_ref``
+* Use data in .dat file to calculate ``mu_trans``, ``mu_fluor``, and ``mu_ref`` (see equations below)
+* Split the data into three entries for AIMMDB
+    * One entry for each mu channel (transmission, fluorescence, reference)
+    * Each entry contains DataFrame with two columns (energy, mu), plus metadata dictionary equivalent to ``temp_md`` with key added for the channel
+    * Optionally include uid as third element in each entry
 
 ``mu`` transmission
 -------------------
 
-We store a dataframe column called ``mu_trans`` which is calculated via
+We store a dataframe with column ``mu_trans`` which is calculated via
 
 .. code::
 
@@ -26,7 +29,7 @@ This is the intensity of the transmission signal, where :math:`I_0` is the backg
 ``mu`` fluorescence
 -------------------
 
-We store a dataframe column called ``mu_fluor`` which is calculated via
+We store a dataframe with column called ``mu_fluor`` which is calculated via
 
 .. code::
 
@@ -37,7 +40,7 @@ This is the intensity of the fluorescence signal. Note there is no logarithmic s
 ``mu`` fluorescence
 -------------------
 
-We store a dataframe column called ``mu_ref`` which is calculated via
+We store a dataframe with column called ``mu_ref`` which is calculated via
 
 .. code::
 

@@ -33,8 +33,7 @@ def read_metadata_and_header(path):
     }
 
     # only comment line without colon should be header
-    header = [line for line in comment_lines if ":" not in line]
-    header = header[0]
+    header = [line for line in comment_lines if ":" not in line][0]
 
     return metadata, header
 
@@ -42,15 +41,17 @@ def read_metadata_and_header(path):
 def ingest(path, return_uid=False):
     """Prepare scan data from Eli (ISS beamline) for entry into AIMMDB
 
-    .dat file contains commented lines (denoted by #) with metadata, and columnated data.
+    Data is stored in .dat file which contains commented lines (denoted by #) with metadata,
+    and columnated data below the metadata.
     Data columns should correspond to energy, i0, it, ir, iff, and aux channels.
-    DataFrame for aimmdb contains only energy and absorption coefficient (mu).
     There are several ways to calculate mu based on the mode of the measurement:
     - mu_trans = -ln(it/i0)
     - mu_fluor = iff/i0
     - mu_ref = -ln(ir/i0)
 
-    These are each calculated and used as columns in final DataFrame.
+    These are each calculated and three database entries are created. Each entry contains a DataFrame with energy and mu
+    as columns, as well as a metadata dictionary containing the commented metadata from the file plus an additional key
+    indicating the measurement channel (trans, fluor, or ref).
 
     Parameters
     ----------
@@ -59,14 +60,13 @@ def ingest(path, return_uid=False):
 
     Returns
     -------
-    tuple[DataFrame, dict[str, str]]
-        First element is DataFrame of scan data (i.e., spectra).
-        Second element is the metadata in a dictionary of str key-value pairs.
+    tuple(tuple[DataFrame, dict[str, str]], tuple[DataFrame, dict[str, str]], tuple[DataFrame, dict[str, str]])
+        Database entries corresponding to the transmission, fluorescence, and reference channels.
 
     Other Parameters
     ----------------
     return_uid: bool
-        Optional keyword to return uid as third element in tuple.
+        Optional keyword to return uid as third element in each entry.
         The uid should be present in the metadata, but it is an especially important
         piece of information that may be useful to store separately.
     """
