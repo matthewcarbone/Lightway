@@ -1,3 +1,4 @@
+from unittest.util import _MIN_DIFF_LEN
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -69,17 +70,35 @@ def ingest(path, return_uid=False):
         The uid should be present in the metadata, but it is an especially important
         piece of information that may be useful to store separately.
     """
-    md, hdr = read_metadata_and_header(path)
+    temp_md, hdr = read_metadata_and_header(path)
 
     temp_data = pd.read_csv(path, delim_whitespace=True, comment="#", names=hdr.split())
     temp_data["mu_trans"] = -np.log(temp_data["it"] / temp_data["i0"])
     temp_data["mu_fluor"] = temp_data["iff"] / temp_data["i0"]
     temp_data["mu_ref"] = -np.log(temp_data["ir"] / temp_data["i0"])
 
-    data = temp_data[["energy", "mu_trans", "mu_fluor", "mu_ref"]]
+    df_trans = temp_data[["energy", "mu_trans"]]
+    temp_md.update(channel="transmission")
+    md_trans = temp_md
+
+    df_fluor = temp_data[["energy", "mu_fluor"]]
+    temp_md.update(channel="fluoresence")
+    md_fluor = temp_md
+
+    df_ref = temp_data[["energy", "mu_ref"]]
+    temp_md.update(channel="reference")
+    md_ref = temp_md
 
     if return_uid:
-        uid = md["Scan.uid"]
-        return data, md, uid
+        uid = temp_md["Scan.uid"]
+        return (
+            (df_trans, md_trans, uid),
+            (df_fluor, md_fluor, uid),
+            (df_ref, md_ref, uid),
+        )
     else:
-        return data, md
+        return (
+            (df_trans, md_trans),
+            (df_fluor, md_fluor),
+            (df_ref, md_ref),
+        )
