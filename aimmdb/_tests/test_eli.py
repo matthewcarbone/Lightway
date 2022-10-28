@@ -29,6 +29,10 @@ def test_ingest():
         channel = md["channel"]
         assert channel in ["transmission", "fluorescence", "reference"]
         df = channel_data[0]
-        assert len(df["energy"]) == 630
+        with open(test_path) as test_file:
+            data_lines = [
+                line for line in test_file.readlines() if not line.startswith("#")
+            ]
+            assert df.shape[0] == len(data_lines)
         mu_channels = ["mu_trans", "mu_fluor", "mu_ref"]
-        assert any([(_mu in df.columns) for _mu in mu_channels])
+        assert any([(mu in df.columns) for mu in mu_channels])
