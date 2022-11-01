@@ -9,6 +9,8 @@ import pandas as pd
 from scipy.interpolate import InterpolatedUnivariateSpline
 from sklearn.linear_model import LinearRegression
 from tiled.client.dataframe import DataFrameClient
+from larch import Group as xafsgroup
+from larch.xafs import pre_edge
 
 from aimmdb.postprocessing import utils
 from aimmdb.uid import uid
@@ -348,6 +350,44 @@ class Smooth(UnaryOperator):
             new_data.update({column: y_smooth})
 
         return pd.DataFrame(new_data)
+
+
+class NormalizeXAS(UnaryOperator):
+    """Return XAS spectrum normalized using larch.
+
+    Parameters
+    ----------
+    x_column : str, optional
+        References a single column in the DataFrameClient (this is the
+        "x-axis").
+    y_columns : list, optional
+        References a list of columns in the DataFrameClient (these are the
+        "y-axes").
+    """
+
+    def __init__(self, *, x_column="energy", y_columns=["mu"]):
+        self.x_column = x_column
+        self.y_columns = y_columns
+
+    @staticmethod
+    def flatten(group):
+        step_index = int(np.argwhere(group.energy > group.e0)[0])
+        zeros = np.zeros(step_index)
+        ones = np.ones(group.energy.shape[0] - step_index)
+        step = np.concatenate((zeros, ones), axis=0)
+        diffline = (group.post_edge - group.pre_edge) / group.edge_step
+        group.flat = group.norm + step * (1 - diffline)
+
+    def _process_data(self, df):
+        new_data = df[self.x_column]
+        larch_group = xafsgroup()
+        larch_group.energy = np.array(df[self.x_column])
+        for column in self.y_columns:
+            larch_group.mu = np.array(column)
+            self.flatten(larch_group)
+            norm_mu = larch_group.flat
+            new_data[column] = norm_mu
+        return new_data
 
 
 # TODO
