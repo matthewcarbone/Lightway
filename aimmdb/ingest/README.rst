@@ -1,5 +1,5 @@
 
-Ingestion steps for Eli's beamline
+Ingestion steps for NSLS-II Inner Shell Spectroscopy (ISS) beamline
 ==================================
 
 This ingestion pipeline reads ``.dat`` files. These files contain commented lines (denoted by #) aka metadata, and columnated data beneath the metadata. The pipeline is tested on some example data found at ``aimmdb/_tests/eli_test_file.dat``.
