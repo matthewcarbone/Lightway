@@ -372,8 +372,12 @@ class NormalizeLarch(UnaryOperator):
 
     @staticmethod
     def _flatten(group: xafsgroup):
-        """Flattens normalized XAS spectrum so there is no downward or upward trend in data.
+        """Flattens post_edge of normalized XAS spectrum so there is no downward or upward trend in data.
+
         Data should be first normalized (along with other calculations) via larch.xafs pre_edge function.
+        Flattening is done by first creating a step function with a step at e0.
+        This step function is then multiplied by one minus the difference between the pre_edge and post_edge lines,
+        then added to the normalized spectrum.
         """
         step_index = int(np.argwhere(group.energy > group.e0)[0])
         zeros = np.zeros(step_index)
