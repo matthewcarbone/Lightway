@@ -356,6 +356,21 @@ class NormalizeLarch(UnaryOperator):
     """Return XAS spectrum normalized using larch.
     Post-edge is normalized such that spectral features oscillate around 1.
 
+    Calls larch `pre_edge` function on data to perfrom normalization.
+    This function performs several steps:
+       1. determine E0 (if not supplied) from max of deriv(mu)
+       2. fit a line to the region below the edge
+       3. fit a quadratic curve to the region above the edge
+       4. extrapolate the two curves to E0 and take their difference
+          to determine the edge jump
+
+    Normalized spectrum (`norm_mu`) is calculated via the following:
+    `norm_mu = (mu - pre_edge_line) / edge_jump`
+
+    To flatten the spectrum the fitted post-edge quadratic curve is subtracted
+    from the post-edge.
+
+
     Parameters
     ----------
     x_column : str, optional
