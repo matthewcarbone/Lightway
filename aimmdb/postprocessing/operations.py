@@ -371,11 +371,14 @@ class NormalizeLarch(UnaryOperator):
         self.y_columns = y_columns
 
     @staticmethod
-    def flatten(group: xafsgroup):
+    def _flatten(group: xafsgroup):
+        """Flattens normalized XAS spectrum so there is no downward or upward trend in data.
+        Data should be first normalized (along with other calculations) via larch.xafs pre_edge function.
+        """
         step_index = int(np.argwhere(group.energy > group.e0)[0])
         zeros = np.zeros(step_index)
         ones = np.ones(group.energy.shape[0] - step_index)
-        step = np.concatenate((zeros, ones), axis=0)
+        step = np.concatenate((zeros, ones), axis=0)  # step function at e0
         diffline = (group.post_edge - group.pre_edge) / group.edge_step
         group.flat = group.norm + step * (1 - diffline)
 
@@ -386,7 +389,7 @@ class NormalizeLarch(UnaryOperator):
             larch_group.energy = np.array(df[self.x_column])
             larch_group.mu = np.array(df[column])
             pre_edge(larch_group, group=larch_group)
-            self.flatten(larch_group)
+            self._flatten(larch_group)
             norm_mu = larch_group.flat
             new_data.update({column: norm_mu})
 
