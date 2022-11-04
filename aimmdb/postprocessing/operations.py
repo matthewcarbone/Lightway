@@ -379,11 +379,14 @@ class NormalizeLarch(UnaryOperator):
     y_columns : list, optional
         References a list of columns in the DataFrameClient (these are the
         "y-axes"). Default is ["mu"].
+    **kwargs : dict
+        May be used to pass keyword arguments into larch.xafs pre_edge function.
     """
 
-    def __init__(self, *, x_column="energy", y_columns=["mu"]):
+    def __init__(self, *, x_column="energy", y_columns=["mu"], **kwargs):
         self.x_column = x_column
         self.y_columns = y_columns
+        self.kwargs = kwargs
 
     def _process_data(self, df):
         new_data = {self.x_column: df[self.x_column]}
@@ -391,7 +394,7 @@ class NormalizeLarch(UnaryOperator):
             larch_group = xafsgroup()
             larch_group.energy = np.array(df[self.x_column])
             larch_group.mu = np.array(df[column])
-            pre_edge(larch_group, group=larch_group)
+            pre_edge(larch_group, group=larch_group, **self.kwargs)
             norm_mu = larch_group.flat
             new_data.update({column: norm_mu})
 
