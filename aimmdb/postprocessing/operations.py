@@ -379,12 +379,6 @@ class NormalizeLarch(UnaryOperator):
     y_columns : list, optional
         References a list of columns in the DataFrameClient (these are the
         "y-axes"). Default is ["mu"].
-    e0 : float, optional
-        Energy value of edge jump (in eV). Will be determined by larch if not
-        provided. Default is None.
-    step : float, optional
-        Size of edge jump (along y-axis). Will be determined by larch if not
-        provided. Default is None.
     larch_pre_edge_kwargs : dict, optional
         Dictionary of keyword arguments to be passed into larch pre_edge function.
         Can be used to specify normalization parameters that are otherwise
