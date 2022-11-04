@@ -379,15 +379,31 @@ class NormalizeLarch(UnaryOperator):
     y_columns : list, optional
         References a list of columns in the DataFrameClient (these are the
         "y-axes"). Default is ["mu"].
-    **larch_kwargs : dict
-        Additional keyword arguments will be passed into larch.xafs pre_edge function,
-        see: https://xraypy.github.io/xraylarch/xafs_preedge.html for function documentation
+    e0 : float, optional
+        Energy value of edge jump (in eV). Will be determined by larch if not
+        provided. Default is None.
+    step : float, optional
+        Size of edge jump (along y-axis). Will be determined by larch if not
+        provided. Default is None.
+    larch_pre_edge_kwargs : dict, optional
+        Dictionary of keyword arguments to be passed into larch pre_edge function.
+        Can be used to specify normalization parameters that are otherwise
+        calculated in larch (e.g., e0, edge jump size, pre-edge range, etc.).
+        See https://xraypy.github.io/xraylarch/xafs_preedge.html for pre_edge
+        documentation.
+
     """
 
-    def __init__(self, *, x_column="energy", y_columns=["mu"], **larch_kwargs):
+    def __init__(
+        self,
+        *,
+        x_column="energy",
+        y_columns=["mu"],
+        larch_pre_edge_kwargs=dict(),
+    ):
         self.x_column = x_column
         self.y_columns = y_columns
-        self.larch_kwargs = larch_kwargs
+        self.larch_pre_edge_kwargs = larch_pre_edge_kwargs
 
     def _process_data(self, df):
         new_data = {self.x_column: df[self.x_column]}
@@ -395,7 +411,11 @@ class NormalizeLarch(UnaryOperator):
             larch_group = xafsgroup()
             larch_group.energy = np.array(df[self.x_column])
             larch_group.mu = np.array(df[column])
-            pre_edge(larch_group, group=larch_group, **self.larch_kwargs)
+            pre_edge(
+                larch_group,
+                group=larch_group,
+                **self.larch_pre_edge_kwargs,
+            )
             norm_mu = larch_group.flat
             new_data.update({column: norm_mu})
 
