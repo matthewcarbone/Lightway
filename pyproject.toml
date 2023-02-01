@@ -29,7 +29,9 @@ classifiers = [
 ]
 dependencies = [
     "tiled[all]==0.1.0a80",
-    "databroker[all]==2.0.0b12"
+    "databroker[all]==2.0.0b12",
+    "pymongo==4.3.3",
+    "dask"
 ]
 
 # Dynamic version reads __version__ directly from my_package.__init__

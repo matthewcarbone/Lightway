@@ -4,5 +4,7 @@ secrets
 spike
 *.egg-info
 *.sqlite
+*.csv
+*.dat
 build
 data
