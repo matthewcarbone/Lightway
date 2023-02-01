@@ -28,11 +28,8 @@ classifiers = [
     "Intended Audience :: Science/Research",
 ]
 dependencies = [
-    "numpy",
-    "tqdm",
-    "monty",
-    "pymatgen<=2022.7.8",
-    "ase"
+    "tiled[all]==0.1.0a80",
+    "databroker[all]==2.0.0b12"
 ]
 
 # Dynamic version reads __version__ directly from my_package.__init__
