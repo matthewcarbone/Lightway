@@ -1,8 +1,10 @@
+********
+Lightway
+********
 
-AIMMDB
-======
+Analysis and quality assurance/control pipeline for the NSLSII Inner-Shell Spectroscopy beamline.
 
-Test change
+`This <https://gist.github.com/danielballan/cd787e98bd0a2821b5f71932e22e460f>`_ is a great resource for creating a testing environment for tiled.
 
 Funding acknowledgement
 -----------------------
