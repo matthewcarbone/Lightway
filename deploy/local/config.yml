@@ -1,37 +1,17 @@
 trees:
-  - path: /
-    tree: aimmdb.adapters.aimm:AIMMCatalog.from_uri
-    #    tree: aimmdb.adapters.mongo:MongoAdapter.from_uri
-    args:
-      uri: mongodb://root:${MONGO_PASSWORD}@localhost:27018/aimm?authSource=admin
-      data_directory: ./data
-      dataset_to_specs:
-        nmc:
-          - XAS_TFY
-          - XAS_TEY
-          - XAS_trans
-    access_control:
-      access_policy: aimmdb.access:DatasetAccessPolicy
-      args:
-        provider: toy
-        access_lists:
-          joe:
-            default: rw
-          dan:
-            default: r
+# Create a Mongo "database" in memory.
+# When the server is stopped the database will be forgotten.
+# aimmdb.adapters.aimm:AIMMCatalog.from_mongomock
+# databroker.experimental.server_ext:MongoAdapter.from_mongomock
+- tree: databroker.experimental.server_ext:MongoAdapter.from_mongomock
+  path: /
+  args:
+    directory: ./data_files
+
 authentication:
-  allow_anonymous_access: false
-  providers:
-    - provider: toy
-      authenticator: tiled.authenticators:DictionaryAuthenticator
-      args:
-        users_to_passwords:
-          joe: abc123
-          dan: abc123
-  tiled_admins:
-    - provider: toy
-      id: joe
-validation:
-  XAS_TFY: aimmdb.validation:validate_xas_tfy
-  XAS_TEY: aimmdb.validation:validate_xas_tey
-  XAS_trans: aimmdb.validation:validate_xas_transmission
+  single_user_api_key: eli1is2the3big4cheese
+
+# specs:
+#   - spec: test
+#     validator: aimmdb.validation:validate_xas_tfy
+

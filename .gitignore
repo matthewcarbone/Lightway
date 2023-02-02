@@ -8,3 +8,6 @@ spike
 *.dat
 build
 data
+.DS_Store
+deploy/local/config_local_mongo.yaml
+data_files
