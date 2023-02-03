@@ -4,7 +4,7 @@ Lightway
 
 Analysis and quality assurance/control pipeline for the NSLSII Inner-Shell Spectroscopy beamline.
 
-`This <https://gist.github.com/danielballan/cd787e98bd0a2821b5f71932e22e460f>`_ is a great resource for creating a testing environment for tiled.
+`This <https://gist.github.com/danielballan/cd787e98bd0a2821b5f71932e22e460f>`_ is a great resource for creating a testing environment for tiled. `This <https://gist.github.com/danielballan/ebee67b3169e5c9e30a6230fc2ef21e1>`_ is one where data can be persisted.
 
 Funding acknowledgement
 -----------------------
