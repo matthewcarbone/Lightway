@@ -28,7 +28,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
 ]
 dependencies = [
-    "tiled[all]==0.1.0a80",
+    "tiled[all]==0.1.0a81",
     "databroker[all]==2.0.0b12",
     "pymongo==4.3.3",
     "dask",
