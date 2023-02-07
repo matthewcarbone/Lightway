@@ -1,6 +1,5 @@
 from enum import Enum
 import pydantic
-from typing import Optional
 
 from lightway.utils import get_element_and_edges_list
 
@@ -37,7 +36,7 @@ class SampleMetadata(pydantic.BaseModel):
 class ExperimentMetadata(pydantic.BaseModel, extra=pydantic.Extra.allow):
     facility: str
     beamline: str
-    sample_id: Optional[str]
+    sample_id: str
 
     @pydantic.validator("facility")
     def check_facility(cls, facility):
