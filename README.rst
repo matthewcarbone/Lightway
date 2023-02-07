@@ -6,6 +6,23 @@ Analysis and quality assurance/control pipeline for the NSLSII Inner-Shell Spect
 
 `This <https://gist.github.com/danielballan/cd787e98bd0a2821b5f71932e22e460f>`_ is a great resource for creating a testing environment for tiled. `This <https://gist.github.com/danielballan/ebee67b3169e5c9e30a6230fc2ef21e1>`_ is one where data can be persisted.
 
+Important notes
+---------------
+
+The default ``config.yml`` file can be found in ``deploy/local``. This file expects the user to know a few things by default:
+
+*None of the data will be saved to disk*! By default, the config uses a mock MongoDB adapter which works in memory only.
+
+The environment variable ``TILED_SINGLE_USER_API_KEY`` should be set and used in the client. Alternatively, one can manually set the single user API key:
+
+.. code::
+
+    authentication:
+        single_user_api_key: eli1is2the3big4cheese
+
+
+The environment variable ``TILED_CONFIG`` should be set and point to the ``config.yml`` file of choice. This will allow you to serve the Tiled instance using a simple command: ``tiled serve config`` (Tiled will look for this environment variable and use that as the default path, instead of the user being required to provide one).
+
 Funding acknowledgement
 -----------------------
 

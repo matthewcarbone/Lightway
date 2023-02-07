@@ -1,17 +1,11 @@
 trees:
-# Create a Mongo "database" in memory.
-# When the server is stopped the database will be forgotten.
-# aimmdb.adapters.aimm:AIMMCatalog.from_mongomock
-# databroker.experimental.server_ext:MongoAdapter.from_mongomock
 - tree: databroker.experimental.server_ext:MongoAdapter.from_mongomock
   path: /
   args:
     directory: ./data_files
 
-authentication:
-  single_user_api_key: eli1is2the3big4cheese
+specs:
+  - spec: test
+    validator: lightway.validators:validate_ExperimentalXASMetadata
 
-# specs:
-#   - spec: test
-#     validator: aimmdb.validation:validate_xas_tfy
-
+reject_undeclared_specs: true
