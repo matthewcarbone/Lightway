@@ -24,7 +24,7 @@ def _validate_ExperimentalXASMetadata_(metadata, errors):
 
 def _validate_minimum_XAS_column_names_subset_(columns, errors):
     if not MINIMUM_XAS_COLUMNS.issubset(columns):
-        errors.append(f"columns {columns} must contain i0 and tey")
+        errors.append(f"columns {columns} must contain `energy` and `mu`")
 
 
 def validate_ExperimentalXASMetadata(
