@@ -36,4 +36,4 @@ def validate_ExperimentalXASMetadata(
     columns = set(structure.macro.columns)
     _validate_minimum_XAS_column_names_subset_(columns, errors)
     if len(errors) > 0:
-        raise ValidationError(errors)
+        raise ValidationError(" ".join(errors))
