@@ -37,6 +37,7 @@ class ExperimentMetadata(pydantic.BaseModel, extra=pydantic.Extra.allow):
     facility: str
     beamline: str
     sample_id: str
+    # Add ref/trans/fluor
 
     @pydantic.validator("facility")
     def check_facility(cls, facility):

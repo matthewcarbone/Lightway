@@ -28,7 +28,7 @@ def check_versions():
     import tiled
 
     v = tiled.__version__
-    should_be = "0.1.0a81"
+    should_be = "0.1.0a85"
     if v != should_be:
         print(
             f"tiled should be of versions {should_be}, was found to be {v}, "
