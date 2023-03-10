@@ -1,11 +1,11 @@
 trees:
-- tree: databroker.experimental.server_ext:MongoAdapter.from_mongomock
+- tree: lightway.adapters:LightwayMongoInMemory.from_mongomock
   path: /
   args:
     directory: ./data_files
 
 specs:
-  - spec: test
-    validator: lightway.validators:validate_ExperimentalXASMetadata
+  - spec: ExperimentalXAS
+    validator: lightway.validators:validate_ExperimentalXAS
 
 reject_undeclared_specs: true

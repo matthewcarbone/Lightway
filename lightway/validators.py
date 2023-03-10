@@ -1,7 +1,7 @@
 import pydantic
 from tiled.validation_registration import ValidationError
 
-from lightway.schemas import ExperimentalXASMetadata
+from lightway.schemas.xas_schemas import ExperimentalXASMetadata
 
 
 MINIMUM_XAS_COLUMNS = {"energy", "mu"}
@@ -27,7 +27,7 @@ def _validate_minimum_XAS_column_names_subset_(columns, errors):
         errors.append(f"columns {columns} must contain `energy` and `mu`")
 
 
-def validate_ExperimentalXASMetadata(
+def validate_ExperimentalXAS(
     metadata, structure_family, structure, spec, references
 ):
     errors = []

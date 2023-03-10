@@ -150,5 +150,22 @@ def ingest_all(client, root, extension=".dat", pbar=True):
     for path in tqdm(list(Path(root).rglob(f"*{extension}")), disable=t):
         res = load_from_disk(path)
         for r in res:
-            r["metadata"]["dataset"] = "raw"
-            client.write_dataframe(r["data"], metadata=r["metadata"])
+            sample_metadata = {
+                "edge": r["metadata"]["Element-edge"],
+                "element": r["metadata"]["Element-symbol"],
+            }
+            channel = r["metadata"].pop("channel")
+            metadata = {
+                "original_sample_metadata": r["metadata"],
+                "sample_metadata": sample_metadata,
+                "experiment_metadata": {
+                    "facility": "NSLSII",
+                    "beamline": "ISS",
+                    "sample_id": r["metadata"]["Scan-uid"],
+                    "channel": channel,
+                },
+                "dataset": "raw",
+            }
+            client.write_dataframe(
+                r["data"], metadata=metadata, specs=["ExperimentalXAS"]
+            )

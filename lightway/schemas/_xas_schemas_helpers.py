@@ -3,6 +3,7 @@ import pydantic
 
 from lightway.utils import get_element_and_edges_list
 
+
 # Currently, only NSLSII is allowed, but we can add to this later
 FACILITIES = {"NSLSII"}
 
@@ -37,7 +38,7 @@ class ExperimentMetadata(pydantic.BaseModel, extra=pydantic.Extra.allow):
     facility: str
     beamline: str
     sample_id: str
-    # Add ref/trans/fluor
+    channel: str
 
     @pydantic.validator("facility")
     def check_facility(cls, facility):
@@ -49,9 +50,7 @@ class ExperimentMetadata(pydantic.BaseModel, extra=pydantic.Extra.allow):
         if beamline not in BEAMLINES:
             raise ValueError(f"{beamline} not a valid beamline ({BEAMLINES})")
 
-
-class ExperimentalXASMetadata(pydantic.BaseModel, extra=pydantic.Extra.allow):
-    sample_metadata: SampleMetadata
-    experiment_metadata: ExperimentMetadata
-    measurement_type: MeasurementEnum = pydantic.Field("xas", const=True)
-    dataset: str
+    @pydantic.validator("channel")
+    def check_channel(cls, channel):
+        if channel not in ["transmission", "fluorescence", "reference"]:
+            raise ValueError(f"{channel} not a valid channel")

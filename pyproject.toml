@@ -23,19 +23,22 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering",
-    "Intended Audience :: Developers",
+    "Intended Audience :: Devel`opers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
 ]
 dependencies = [
-    "tiled[all]==0.1.0a81",
+    # "tiled[all]==0.1.0a81",
+    "tiled[all]",
     "databroker[all]==2.0.0b12",
-    "pymongo==4.3.3",
-    "dask",
+    # "pymongo==4.3.3",
+    # "fastapi==0.89.1",  # Open a PR
+    # "dask",
     "monty",
     "scikit-learn",
     "scipy",
-    "xraylarch"
+    "xraylarch",
+    "semver"
 ]
 
 # Dynamic version reads __version__ directly from my_package.__init__

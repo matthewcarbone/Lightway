@@ -18,7 +18,7 @@ The environment variable ``TILED_SINGLE_USER_API_KEY`` should be set and used in
 .. code::
 
     authentication:
-        single_user_api_key: eli1is2the3big4cheese
+        single_user_api_key: my1api2key
 
 
 The environment variable ``TILED_CONFIG`` should be set and point to the ``config.yml`` file of choice. This will allow you to serve the Tiled instance using a simple command: ``tiled serve config`` (Tiled will look for this environment variable and use that as the default path, instead of the user being required to provide one).

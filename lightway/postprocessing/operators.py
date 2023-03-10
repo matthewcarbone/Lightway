@@ -1,14 +1,36 @@
 """Module for housing post-processing operations."""
 
+from abc import abstractproperty, abstractmethod, ABC
 from datetime import datetime
 
 from monty.json import MSONable
 import numpy as np
 import pandas as pd
+
+# https://python-semver.readthedocs.io/en/stable/api.html#semver.match
+# import semver
+
 from scipy.interpolate import InterpolatedUnivariateSpline
 from larch import Group as xafsgroup
 from larch.xafs import pre_edge
-from tqdm import tqdm
+
+
+class SpecsCompatibilityError(Exception):
+    def __init__(self, node_spec_names, operator_spec_names):
+        message = (
+            f"Node specs are {node_spec_names}, but the operator "
+            f"{operator_spec_names}"
+        )
+        super().__init__(message)
+
+
+class SpecsVersionCompatibilityError(Exception):
+    def __init__(self, node_spec_names, operator_spec_names):
+        message = (
+            f"Node specs are {node_spec_names}, but the operator "
+            f"{operator_spec_names}"
+        )
+        super().__init__(message)
 
 
 class Operator(MSONable):
@@ -32,6 +54,147 @@ class Operator(MSONable):
         df = self._process_data(df, metadata)
         metadata = self._process_metadata(df, metadata)
         return df, metadata
+
+
+class UnaryOperatorOnNodeMixin(MSONable, ABC):
+    """This mixin class defines methods on ``Node`` objects. It will do a few
+    things:
+
+    - Requires a ``requirements`` property, which returns the list of required
+      specs that the node must have, and their versions.
+    - Defines compatibility between versions
+    """
+
+    @property
+    @abstractproperty
+    def requirements(self):
+        """Returns a minimum list of requirements of the form
+
+        .. code::
+
+            [
+                {"name": SPEC_NAME, "version": None},
+                {"name": SPEC_NAME_2, "version": "==0.0.1"},
+                {"name": SPEC_NAME_3, "version": ">1.0.5"}
+                ...
+            ]
+
+        which will be checked against the node at runtime to ensure that the
+        operator is compatible with that verison of the spec.
+
+        Returns
+        -------
+        dict
+        """
+
+        ...
+
+    @abstractmethod
+    def _process_data(self, node):
+        """Processes the data on the node.
+
+        Parameters
+        ----------
+        node : tiled.client.node.Node
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+
+        ...
+
+    @abstractmethod
+    def _process_metadata(self, node):
+        """Processes the metadata on the node, but excludes any processing
+        specific to tracking provenance.
+
+        Parameters
+        ----------
+        node : tiled.client.node.Node
+
+        Returns
+        -------
+        dict
+        """
+
+        ...
+
+    def _assert_compatibility(self, node):
+        # Get the current node's specs
+        node_specs = node.item["attributes"]["specs"]
+
+        # Compare those specs to the requirements of the operator
+        operator_specs = self.requirements
+
+        operator_specs_names = set([xx["name"] for xx in node_specs])
+        node_specs_names = set([xx["name"] for xx in operator_specs])
+
+        # If there is a mismatch between the required specs and the node specs
+        # immediately exit
+        if not node_specs_names.issuperset(operator_specs_names):
+            raise SpecsCompatibilityError(
+                node_specs_names, operator_specs_names
+            )
+
+        # Compare the versions
+        # TODO
+
+    def _preprocess(self, node):
+        """Processes the parent node's metadata.
+
+        Parameters
+        ----------
+        node : tiled.client.node.Node
+
+        Returns
+        -------
+        dict
+            Operator-specific metadata for the new object.
+        """
+
+        self._assert_compatibility(node)
+
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+        return {
+            "operator": self.as_dict(),
+            "dt": now,
+            "parent": node.item["id"],
+        }
+
+    def __call__(self, node):
+        provenance = self._preprocess(node)
+        new_metadata = self._process_metadata(node)
+        new_data = self._process_data(node)
+        postprocessed = {"operator_information": provenance}
+        return new_data, {**new_metadata, **postprocessed}
+
+
+class MetadataOnlyUnaryOperatorOnNodeMixin(UnaryOperatorOnNodeMixin):
+    """Defines methods on operators that act in-place"""
+
+    def _process_data(self, node):
+        """No data is changed in the metadata-only operators.
+
+        Parameters
+        ----------
+        node : tiled.client.node.Node
+
+        Returns
+        -------
+        None
+        """
+
+        return None
+
+    def __call__(self, node):
+        new_data, new_metadata = super().__call__(node)
+
+        # For in-place operations, we don't require the parent info
+        new_metadata["operator_information"].pop("parent")
+
+        return new_data, new_metadata
 
 
 class StandardizeGrid(Operator):
@@ -160,14 +323,20 @@ class NormalizeLarch(Operator):
         return pd.DataFrame(new_data)
 
 
-class QAQC(Operator):
+class XASDataQuality(MetadataOnlyUnaryOperatorOnNodeMixin):
     """Label the spectrum as "good", "bad" or "ugly"."""
+
+    @property
+    def requirements(self):
+        return [{"name": "ExperimentalXAS", "version": None}]
 
     def __init__(self, negative_threshold=0.2, tail_positive_threshold=0.02):
         self._negative_threshold = negative_threshold
         self._tail_positive_threshold = tail_positive_threshold
 
-    def _process_metadata(self, df, metadata):
+    def _process_metadata(self, node):
+        df = node.read()
+        metadata = dict(node.metadata)
         c1 = (df["mu"].to_numpy() < 0.0).mean() > self._negative_threshold
         mu = (df["mu"].to_numpy()[-len(df.index) // 4 :] > 1.5).mean()
         c2 = mu > self._tail_positive_threshold
@@ -178,23 +347,23 @@ class QAQC(Operator):
         return metadata
 
 
-# TODO
-class PreNormalize(Operator):
-    ...
+# # TODO
+# class PreNormalize(Operator):
+#     ...
 
 
-def postprocess(client, operators=[], pbar=True):
-    operators_string = "->".join([xx.__class__.__name__ for xx in operators])
-    operators_details = [operator.as_dict() for operator in operators]
-    for parent_uid, node in tqdm(client.items(), disable=not pbar):
-        df = node.read()
-        new_metadata = dict(node.metadata).copy()
-        for operator in operators:
-            df, new_metadata = operator(df, new_metadata)
+# def postprocess(client, operators=[], pbar=True):
+#     operators_string = "->".join([xx.__class__.__name__ for xx in operators])
+#     operators_details = [operator.as_dict() for operator in operators]
+#     for parent_uid, node in tqdm(client.items(), disable=not pbar):
+#         df = node.read()
+#         new_metadata = dict(node.metadata).copy()
+#         for operator in operators:
+#             df, new_metadata = operator(df, new_metadata)
 
-        # Append some specific postprocessing information to the results
-        dt = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        new_metadata["operator_details"] = operators_details
-        new_metadata["modified"] = dt
-        new_metadata["dataset"] = operators_string
-        client.write_dataframe(df, metadata=new_metadata)
+#         # Append some specific postprocessing information to the results
+#         dt = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+#         new_metadata["operator_details"] = operators_details
+#         new_metadata["modified"] = dt
+#         new_metadata["dataset"] = operators_string
+#         client.write_dataframe(df, metadata=new_metadata)
