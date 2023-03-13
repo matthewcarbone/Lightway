@@ -1,0 +1,3 @@
+[submodule "iss_xas_tools"]
+	path = lightway/ingest/_iss_xas_tools
+	url = https://github.com/matthewcarbone/iss_xas_tools

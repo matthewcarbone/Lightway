@@ -9,6 +9,11 @@ import warnings
 from lightway.ingest.validators import validate_iss
 
 
+# Horrendous submodule hack - need to deploy Eli's ISS tools in PyPI.
+from lightway.ingest import xas  # noqa
+from xas.process import get_df_and_metadata_from_db
+
+
 def read_metadata_and_header(path):
     """Read through commented lines of dat file to get metadata and DataFrame
     header
@@ -50,6 +55,51 @@ def read_metadata_and_header(path):
     return metadata, header
 
 
+def _process_df_and_metadata(df, metadata):
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        df["mu_trans"] = np.nan_to_num(-np.log(df["it"] / df["i0"]))
+        df["mu_fluor"] = np.nan_to_num(df["iff"] / df["i0"])
+        df["mu_ref"] = np.nan_to_num(-np.log(df["ir"] / df["i0"]))
+
+    df_trans = df[["energy", "mu_trans"]]
+    metadata["channel"] = "transmission"
+    md_trans = metadata.copy()
+    df_trans = df_trans.rename(columns={"mu_trans": "mu"})
+
+    df_fluor = df[["energy", "mu_fluor"]]
+    metadata["channel"] = "fluorescence"
+    md_fluor = metadata.copy()
+    df_fluor = df_fluor.rename(columns={"mu_fluor": "mu"})
+
+    df_ref = df[["energy", "mu_ref"]]
+    metadata["channel"] = "reference"
+    md_ref = metadata.copy()
+    df_ref = df_ref.rename(columns={"mu_ref": "mu"})
+
+    # Assign a uid for now, and mark it as assigned
+    # Note we cannot have "." in any of the keys when they go into tiled
+    if "Scan.uid" not in md_trans.keys():
+        md_trans["Scan-uid"] = f"assigned-{str(uuid4())}"
+    else:
+        md_trans["Scan-uid"] = md_trans.pop("Scan.id")
+    if "Scan.uid" not in md_fluor.keys():
+        md_fluor["Scan-uid"] = f"assigned-{str(uuid4())}"
+    else:
+        md_fluor["Scan-uid"] = md_fluor.pop("Scan.id")
+    if "Scan.uid" not in md_ref.keys():
+        md_ref["Scan-uid"] = f"assigned-{str(uuid4())}"
+    else:
+        md_ref["Scan-uid"] = md_ref.pop("Scan.id")
+
+    validate_iss(df_trans, md_trans)
+    validate_iss(df_fluor, md_fluor)
+    validate_iss(df_ref, md_ref)
+
+    return df_trans, md_trans, df_fluor, md_fluor, df_ref, md_ref
+
+
 def load_from_disk(path):
     """Prepare scan data from Eli (ISS beamline) for entry into AIMMDB
 
@@ -79,57 +129,20 @@ def load_from_disk(path):
         reference channels.
     """
 
-    temp_md, hdr = read_metadata_and_header(path)
+    metadata, hdr = read_metadata_and_header(path)
 
-    temp_data = pd.read_csv(
+    df = pd.read_csv(
         path, delim_whitespace=True, comment="#", names=hdr.split()
     )
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        temp_data["mu_trans"] = np.nan_to_num(
-            -np.log(temp_data["it"] / temp_data["i0"])
-        )
-        temp_data["mu_fluor"] = np.nan_to_num(
-            temp_data["iff"] / temp_data["i0"]
-        )
-        temp_data["mu_ref"] = np.nan_to_num(
-            -np.log(temp_data["ir"] / temp_data["i0"])
-        )
-
-    df_trans = temp_data[["energy", "mu_trans"]]
-    temp_md["channel"] = "transmission"
-    md_trans = temp_md.copy()
-    df_trans = df_trans.rename(columns={"mu_trans": "mu"})
-
-    df_fluor = temp_data[["energy", "mu_fluor"]]
-    temp_md["channel"] = "fluorescence"
-    md_fluor = temp_md.copy()
-    df_fluor = df_fluor.rename(columns={"mu_fluor": "mu"})
-
-    df_ref = temp_data[["energy", "mu_ref"]]
-    temp_md["channel"] = "reference"
-    md_ref = temp_md.copy()
-    df_ref = df_ref.rename(columns={"mu_ref": "mu"})
-
-    # Assign a uid for now, and mark it as assigned
-    # Note we cannot have "." in any of the keys when they go into tiled
-    if "Scan.uid" not in md_trans.keys():
-        md_trans["Scan-uid"] = f"assigned-{str(uuid4())}"
-    else:
-        md_trans["Scan-uid"] = md_trans.pop("Scan.id")
-    if "Scan.uid" not in md_fluor.keys():
-        md_fluor["Scan-uid"] = f"assigned-{str(uuid4())}"
-    else:
-        md_fluor["Scan-uid"] = md_fluor.pop("Scan.id")
-    if "Scan.uid" not in md_ref.keys():
-        md_ref["Scan-uid"] = f"assigned-{str(uuid4())}"
-    else:
-        md_ref["Scan-uid"] = md_ref.pop("Scan.id")
-
-    validate_iss(df_trans, md_trans)
-    validate_iss(df_fluor, md_fluor)
-    validate_iss(df_ref, md_ref)
+    (
+        df_trans,
+        md_trans,
+        df_fluor,
+        md_fluor,
+        df_ref,
+        md_ref,
+    ) = _process_df_and_metadata(df, metadata)
 
     return [
         dict(data=df_trans, metadata=md_trans),
@@ -138,7 +151,30 @@ def load_from_disk(path):
     ]
 
 
-def ingest_all(client, root, extension=".dat", pbar=True):
+def _write_from_res(res, client):
+    for r in res:
+        sample_metadata = {
+            "edge": r["metadata"]["Element-edge"],
+            "element": r["metadata"]["Element-symbol"],
+        }
+        channel = r["metadata"].pop("channel")
+        metadata = {
+            "original_sample_metadata": r["metadata"],
+            "sample_metadata": sample_metadata,
+            "experiment_metadata": {
+                "facility": "NSLSII",
+                "beamline": "ISS",
+                "sample_id": r["metadata"]["Scan-uid"],
+                "channel": channel,
+            },
+            "dataset": "raw",
+        }
+        client.write_dataframe(
+            r["data"], metadata=metadata, specs=["ExperimentalXAS"]
+        )
+
+
+def ingest_all_from_disk(client, root, extension=".dat", pbar=True):
     """Loads in all files matching the provided extension.
 
     Parameters
@@ -149,23 +185,24 @@ def ingest_all(client, root, extension=".dat", pbar=True):
     t = not pbar
     for path in tqdm(list(Path(root).rglob(f"*{extension}")), disable=t):
         res = load_from_disk(path)
-        for r in res:
-            sample_metadata = {
-                "edge": r["metadata"]["Element-edge"],
-                "element": r["metadata"]["Element-symbol"],
-            }
-            channel = r["metadata"].pop("channel")
-            metadata = {
-                "original_sample_metadata": r["metadata"],
-                "sample_metadata": sample_metadata,
-                "experiment_metadata": {
-                    "facility": "NSLSII",
-                    "beamline": "ISS",
-                    "sample_id": r["metadata"]["Scan-uid"],
-                    "channel": channel,
-                },
-                "dataset": "raw",
-            }
-            client.write_dataframe(
-                r["data"], metadata=metadata, specs=["ExperimentalXAS"]
-            )
+        _write_from_res(res, client)
+
+
+def ingest_from_DataBroker(client, db, pbar=True):
+    """Loads in all files matching the provided extension.
+
+    NOTE: this will require some check at some point to ensure unique entries
+    from databroker are not rewritten every time this function is called
+
+    Parameters
+    ----------
+    db
+    """
+
+    # !!!PSEUDOCODE!!!!!!!!
+    for uid in tqdm(db.uids, disable=not pbar):
+        df, metadata = get_df_and_metadata_from_db(db, uid, ...)
+        # !!!!!!!!!!!!!!!!!!!!!
+
+        res = _process_df_and_metadata(df, metadata)
+        _write_from_res(res, client)
